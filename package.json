@@ -1,5 +1,8 @@
 {
   "dependencies": {
+    "@truffle/hdwallet-provider": "^2.1.7",
+    "dotenv": "^16.0.3",
+    "orbit-db": "^0.29.0",
     "truffle": "^5.7.7"
   }
 }
