@@ -32,7 +32,7 @@
             users[_username] = User(_username, passwordHash, true);
 
             // Emit an event to indicate that the user was registered
-            emit RegistrationInfo(_username, true, users[_username].registered);
+            emit RegistrationInfo(_username, users[_username].registered, "User registered successfully!");
 
             return true;
         }
