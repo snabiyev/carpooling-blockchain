@@ -16,11 +16,15 @@
 
         // Events to emit when a user is registered or logged in
         event UserRegistered(string indexed username, bool registered);
+        event UserNotRegistered(string indexed username, string indexed error_message);
 
         // Registering a new user
         function registerUser(string memory _username, string memory _password) public returns (bool) { 
             // Make sure the user is not already registered
-            require(!users[_username].registered, "User already registered");
+            if (!users[_username].registered) {
+                emit UserNotRegistered(_username, "User already registered");
+                return false;
+            }
 
             // Hash the password
             bytes32 passwordHash = keccak256(bytes(_password));
