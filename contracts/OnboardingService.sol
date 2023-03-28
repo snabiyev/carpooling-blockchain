@@ -20,7 +20,7 @@
         // Registering a new user
         function registerUser(string memory _username, string memory _password) public returns (bool) { 
             // Make sure the user is not already registered
-            if (!users[_username].registered) {
+            if (users[_username].registered) {
                 emit RegistrationInfo(_username, false, "User already registered");
                 return false;
             }
