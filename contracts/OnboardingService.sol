@@ -15,12 +15,15 @@
         mapping (string => User) public users;
 
         // Events to emit when a user is registered or logged in
-        event UserRegistered(string indexed username, bool registered);
+        event RegistrationInfo(string indexed username, bool got_registered, string indexed message);
 
         // Registering a new user
         function registerUser(string memory _username, string memory _password) public returns (bool) { 
             // Make sure the user is not already registered
-            require(!users[_username].registered, "User already registered");
+            if (!users[_username].registered) {
+                emit RegistrationInfo(_username, false, "User already registered");
+                return false;
+            }
 
             // Hash the password
             bytes32 passwordHash = keccak256(bytes(_password));
@@ -29,7 +32,7 @@
             users[_username] = User(_username, passwordHash, true);
 
             // Emit an event to indicate that the user was registered
-            emit UserRegistered(_username, users[_username].registered);   
+            emit RegistrationInfo(_username, true, users[_username].registered);
 
             return true;
         }
