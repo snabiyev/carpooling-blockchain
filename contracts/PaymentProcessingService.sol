@@ -25,16 +25,21 @@ contract PaymentProcessingService {
 
     function withdraw(uint amount) public returns (bool){
         require(balances[msg.sender] >= amount, "Insufficient funds");
-        payable(msg.sender).transfer(amount);
+        (bool success, bytes memory data) = (payable(msg.sender)).call{value: amount}("");
+        require(success, "Failed to send Ether");
         balances[msg.sender] -= amount;
         emit Withdraw(msg.sender, amount);
         return true;
     }
 
-    function processPayment(address payable receiver, uint256 amount) public returns (bool) {
+    function processPayment(address[] memory passengers, address payable receiver, uint256 amount) public returns (bool) {
         require(address(this).balance >= amount, "Something unexpected, please try again");
-        receiver.transfer(amount);
+        (bool success, bytes memory data) = receiver.call{value: amount}("");
+        require(success, "Failed to send Ether");
         emit Transfer(msg.sender, receiver, amount);
+        for (uint i = 0; i != passengers.length; i++){
+            balances[passengers[i]] -= amount/passengers.length;
+        } 
         return true;
     }
 }

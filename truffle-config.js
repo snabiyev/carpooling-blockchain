@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 const HDWalletProvider = require('@truffle/hdwallet-provider'); 
-const { API_URL, PRIVATE_KEY } = process.env;
+const { GOERLI_API_URL, SEPOLIA_API_URL, PRIVATE_KEY } = process.env;
 
 module.exports = {
   networks: {
@@ -11,9 +11,14 @@ module.exports = {
       network_id: "*"
     },
     goerli: {
-      provider: () => new HDWalletProvider(PRIVATE_KEY, API_URL),
+      provider: () => new HDWalletProvider(PRIVATE_KEY, GOERLI_API_URL),
       network_id: 5,
-      gasPrice: 165060051345
+      gasPrice: 297673597570
+    },
+    sepolia: {
+      provider: () => new HDWalletProvider(PRIVATE_KEY, SEPOLIA_API_URL),
+      network_id: 11155111,
+      gasPrice: 140000000000
     }
   },
   mocha: {
