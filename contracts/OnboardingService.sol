@@ -52,6 +52,10 @@
             return true;
         }
 
+        function isRegistered(string memory _username) public view returns (bool) {
+            return users[_username].registered;
+        }
+
         function changePassword(string memory _username, bytes32 _newPassword) public returns (bool) {
             if (!users[_username].registered){
                 emit PasswordChangeInfo(_username, false, "User is not registered");
@@ -87,4 +91,5 @@
             require(msg.sender == owner, "Only the contract owner can call this function.");
             selfdestruct(payable(owner));
         }
+        
     }

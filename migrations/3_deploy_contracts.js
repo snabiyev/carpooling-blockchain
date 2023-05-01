@@ -1,5 +1,5 @@
-const CarManagementService = artifacts.require("CarManagementService");
+const VehicleManagementService = artifacts.require("VehicleManagementService");
 
 module.exports = function(deployer) {
-  deployer.deploy(CarManagementService);
+  deployer.deploy(VehicleManagementService);
 };

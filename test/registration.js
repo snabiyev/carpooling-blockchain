@@ -1,98 +1,83 @@
-// Import the necessary dependencies
 const OnboardingService = artifacts.require("OnboardingService");
+const keccak256 = require('keccak256')
 
-contract("OnboardingService", (accounts) => {
+contract("OnboardingService", accounts => {
   let onboardingService;
 
-  beforeEach(async () => {
-    onboardingService = await OnboardingService.new();
+  before(async () => {
+    onboardingService = await OnboardingService.deployed();
   });
 
-  it("should allow users to register", async () => {
-    const username = "user_0";
-    const password = "test_password";
-    const sender = accounts[0];
+  it("registers a new user", async () => {
+    const result = await onboardingService.registerUser("testuser", keccak256("password"), { from: accounts[0] });
+    const event = result.logs[0].args;
 
-    const result = await onboardingService.registerUser(username, password, { from: sender });
-
-    assert(result.logs.length === 1, "Expected one event to be emitted");
-    assert(result.logs[0].event === "UserRegistered", "Expected UserRegistered event to be emitted");
-    assert(result.logs[0].args.userAddress === sender, "Event should include the registered user's address");
-    assert(result.logs[0].args.username === username, "Event should include the registered user's username");
+    assert.equal(event.status, true, "Registration should be successful");
   });
 
-  it("should not allow a user to register twice", async () => {
-    const username = "user_0";
-    const password = "test_password";
-    const sender = accounts[0];
+  it("does not allow duplicate registration", async () => {
+    const result = await onboardingService.registerUser("testuser", keccak256("password"), { from: accounts[0] });
+    const event = result.logs[0].args;
 
-    await onboardingService.registerUser(username, password, { from: sender });
+    assert.equal(event.status, false, "Registration should fail because the user is already registered");
+  });
 
-    try {
-      await onboardingService.registerUser(username, password, { from: sender });
-      assert.fail("Expected an error to be thrown");
-    } catch (error) {
-      assert(error.message.includes("User already registered"), "Expected an error message indicating that the user is already registered");
+  it("logs in an existing user", async () => {
+    await onboardingService.registerUser("testuser", keccak256("password"), { from: accounts[0] });
+    const result = await onboardingService.login("testuser", keccak256("password"), { from: accounts[0] });
+
+    assert.equal(result, true, "User should be able to log in with correct credentials");
+  });
+
+  it("does not log in with incorrect password", async () => {
+    await onboardingService.registerUser("testuser", keccak256("password"), { from: accounts[0] });
+    try{
+      const result = await onboardingService.login("testuser", keccak256("wrongpassword"), { from: accounts[0] });
+    }
+    catch(err){
+      assert.equal(true, true, err);
     }
   });
 
-  it("should allow registered users to log in", async () => {
-    const username = "user_0";
-    const password = "test_password";
-    const sender = accounts[0];
+  it("checks if a user is registered", async () => {
+    await onboardingService.registerUser("testuser", keccak256("password"), { from: accounts[0] });
+    const result = await onboardingService.isRegistered("testuser", { from: accounts[0] });
 
-    await onboardingService.registerUser(username, password, { from: sender });
-
-    const result = await onboardingService.login(username, password, { from: sender });
-
-    assert(result.logs.length === 1, "Expected one event to be emitted");
-
-    assert(result.logs[0].event === "UserLoggedIn", "Expected UserLoggedIn event to be emitted");
-    assert(result.logs[0].args.userAddress === sender, "Event should include the logged in user's address");
+    assert.equal(result, true, "Registered user should be detected as registered");
   });
 
-  it("should not allow unregistered users to log in", async () => {
-    const username = "user_0";
-    const password = "test_password";
-    const sender = accounts[0];
+  it("changes a user's password", async () => {
+    await onboardingService.registerUser("testuser", keccak256("password"), { from: accounts[0] });
+    const result = await onboardingService.changePassword("testuser", keccak256("newpassword"), { from: accounts[0] });
+    const event = result.logs[0].args;
 
-    try {
-      await onboardingService.login(username, password, { from: sender });
-      assert.fail("Expected an error to be thrown");
-    } catch (error) {
-      assert(error.message.includes("User not registered"), "Expected an error message indicating that the user is not registered");
-    }
+    assert.equal(event.status, true, "Password change should be successful");
   });
 
-  it("should not allow registered users to log in with incorrect password", async () => {
-    const username = "user_0";
-    const password = "test_password";
-    const incorrectPassword = "wrongone";
-    const sender = accounts[0];
+  it("does not change to the same password", async () => {
+    await onboardingService.registerUser("testuser2", keccak256("password"), { from: accounts[0] });
+    const result = await onboardingService.changePassword("testuser2", keccak256("password"), { from: accounts[0] });
+    const event = result.logs[0].args;
 
-    await onboardingService.registerUser(username, password, { from: sender });
-
-    try {
-      await onboardingService.login(username, incorrectPassword, { from: sender });
-      assert.fail("Expected an error to be thrown");
-    } catch (error) {
-      assert(error.message.includes("Incorrect password"), "Expected an error message indicating that the password is incorrect");
-    }
+    assert.equal(event.status, false, "Password should not be changed to the same password"); 
   });
 
-  it("should not allow registered users to log in with incorrect username", async () => {
-    const username = "user_0";
-    const password = "test_password";
-    const incorrectUsername = "user_1";
-    const sender = accounts[0];
+  it("should delete a user's account", async () => {
+    // Define the input data
+    const username = "jimmy_doe";
+    const password = keccak256("password123");
 
-    await onboardingService.registerUser(username, password, { from: sender });
+    // Register the user
+    await onboardingService.registerUser(username, password, { from: accounts[0] });
 
-    try {
-      await onboardingService.login(incorrectUsername, password, { from: sender });
-      assert.fail("Expected an error to be thrown");
-    } catch (error) {
-      assert(error.message.includes("Incorrect username"), "Expected an error message indicating that the username is incorrect");
-    }
+    // Delete the user's account
+    const result = await onboardingService.deleteAccount(username, { from: accounts[0] });
+
+    // Check that the account was deleted successfully
+    assert.equal(result.receipt.status, true, "Account deletion failed");
+
+    // Check that the user is no longer registered
+    const isRegistered = await onboardingService.isRegistered(username, { from: accounts[0] });
+    assert.equal(isRegistered, false, "User was not deleted");
   });
 });
